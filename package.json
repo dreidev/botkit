@@ -1,7 +1,7 @@
 {
-  "name": "botkit",
+  "name": "dreibot",
   "version": "0.4.7",
-  "description": "Building blocks for Building Bots",
+  "description": "A bot for managin operations",
   "main": "lib/Botkit.js",
   "dependencies": {
     "async": "^2.0.0-rc.5",
@@ -9,6 +9,7 @@
     "body-parser": "^1.14.2",
     "botbuilder": "^3.2.3",
     "botkit-studio-sdk": "^1.0.0",
+    "cleverbot.io": "^1.0.4",
     "clone": "2.0.0",
     "command-line-args": "^3.0.0",
     "crypto": "0.0.3",
@@ -26,14 +27,18 @@
     "ws": "^1.1.1"
   },
   "devDependencies": {
+    "dotenv": "^4.0.0",
     "jscs": "^2.7.0",
     "mocha": "^2.4.5",
+    "pm2": "^2.2.3",
     "should": "^8.0.2",
     "winston": "^2.1.1"
   },
   "scripts": {
     "pretest": "jscs ./lib/",
-    "test": "mocha tests/*.js"
+    "test": "mocha tests/*.js",
+    "start": "nodemon start slack_bot.js",
+    "deploy": "(pm2 delete dreibot && false) || pm2 start --silent server.js --name dreibot && pm2 save"
   },
   "repository": {
     "type": "git",
