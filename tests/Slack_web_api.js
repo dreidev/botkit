@@ -1,3 +1,4 @@
+require('dotenv').config()
 var should = require('should');
 var Botkit = require('../');
 var path = require('path');
@@ -5,7 +6,7 @@ var tmpdir = require('os').tmpdir();
 var fs = require('fs');
 var winston = require('winston');
 
-var token = process.env.TOKEN;
+var token = process.env.SALCKBOT_TOKEN;
 
 describe('Test', function() {
     it('should have a token', function(done) {
