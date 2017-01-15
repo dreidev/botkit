@@ -2,7 +2,7 @@
 lock '3.6.1'
 
 set :application, 'dreibot'
-set :repo_url, 'git@guthub.com:dreidev/botkit.git'
+set :repo_url, 'git@github.com:dreidev/botkit.git'
 # This reduced deploy time by not having to clone but pull instead
 # If you cahnge the repo you may want to deploy for the first time without this
 set :deploy_via, :remote_cache

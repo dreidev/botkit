@@ -38,7 +38,7 @@
     "pretest": "jscs ./lib/",
     "test": "mocha tests/*.js",
     "start": "nodemon start slack_bot.js",
-    "deploy": "(pm2 delete dreibot && false) || pm2 start --silent server.js --name dreibot && pm2 save"
+    "deploy": "(pm2 delete dreibot && false) || pm2 start --silent slack_bot.js --name dreibot && pm2 save"
   },
   "repository": {
     "type": "git",
