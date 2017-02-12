@@ -2,9 +2,10 @@
   "name": "dreibot",
   "version": "0.4.7",
   "description": "A bot for managin operations",
-  "main": "lib/Botkit.js",
+  "main": "slack_bot.js",
   "dependencies": {
     "async": "^2.0.0-rc.5",
+    "axios": "^0.15.3",
     "back": "^1.0.1",
     "body-parser": "^1.14.2",
     "botbuilder": "^3.2.3",
@@ -37,7 +38,7 @@
   "scripts": {
     "pretest": "jscs ./lib/",
     "test": "mocha tests/*.js",
-    "start": "nodemon start slack_bot.js",
+    "start": "nodemon slack_bot.js",
     "deploy": "(pm2 delete dreibot && false) || pm2 start --silent slack_bot.js --name dreibot && pm2 save"
   },
   "repository": {

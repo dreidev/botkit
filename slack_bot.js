@@ -1,19 +1,21 @@
+'use strict';
+
 require('dotenv').config()
 
-var Botkit = require('./lib/Botkit.js');
-var os = require('os');
+const Botkit = require('./lib/Botkit.js');
+const os = require('os');
+const axios = require('axios');
 
-var controller = Botkit.slackbot({
-    debug: true,
-});
+// personal DREIDEV data
+const dreidevCloseGroupUNames = ['tokyo', 'naderalexan', 'drazious', 'rawanhussein'];
 
-var bot = controller.spawn({
-    token: process.env.SALCKBOT_TOKEN
-}).startRTM();
+var controller = Botkit.slackbot({debug: true});
 
-let cleverbot = new (require("cleverbot.io"))(process.env.CLEVERBOT_API_USER, process.env.CLEVERBOT_API_KEY);
+var bot = controller.spawn({token: process.env.SALCKBOT_TOKEN}).startRTM();
+
+let cleverbot = new(require("cleverbot.io"))(process.env.CLEVERBOT_API_USER, process.env.CLEVERBOT_API_KEY);
 cleverbot.setNick("Dry");
-cleverbot.create(function (err, session) {
+cleverbot.create(function(err, session) {
     if (err) {
         console.log('cleverbot create fail.');
     } else {
@@ -21,12 +23,14 @@ cleverbot.create(function (err, session) {
     }
 });
 
-controller.hears(['call me (.*)', 'my name is (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears([
+    'call me (.*)', 'my name is (.*)'
+], 'direct_message,direct_mention,mention', function(bot, message) {
     var name = message.match[1];
     controller.storage.users.get(message.user, function(err, user) {
         if (!user) {
             user = {
-                id: message.user,
+                id: message.user
             };
         }
         user.name = name;
@@ -36,7 +40,36 @@ controller.hears(['call me (.*)', 'my name is (.*)'], 'direct_message,direct_men
     });
 });
 
-controller.hears(['what is my name', 'who am i'], 'direct_message,direct_mention,mention', function(bot, message) {
+// pants function
+controller.hears([
+    'what the (.*)', 'what do I miss (.*)'
+], 'direct_message,direct_mention,mention', function(bot, message) {
+    var name = message.match[1];
+    controller.storage.users.get(message.user, function(err, user) {
+        if (!user) {
+            user = {
+                id: message.user
+            };
+        }
+        user.name = name;
+        axios.get('https://slack.com/api/users.info', {
+            params: {
+                token: process.env.SALCKBOT_API_TOKEN,
+                user: user.id
+            }
+        }).then(function(response) {
+            if (dreidevCloseGroupUNames.indexOf(response.data.user.name) > -1) {
+                bot.reply(message, 'T h e pants !! ');
+            }
+        }).catch(function(error) {
+            console.log(error);
+        });
+    });
+});
+
+controller.hears([
+    'what is my name', 'who am i'
+], 'direct_message,direct_mention,mention', function(bot, message) {
 
     controller.storage.users.get(message.user, function(err, user) {
         if (user && user.name) {
@@ -54,15 +87,13 @@ controller.hears(['what is my name', 'who am i'], 'direct_message,direct_mention
                                     // the conversation will end naturally with status == 'completed'
                                     convo.next();
                                 }
-                            },
-                            {
+                            }, {
                                 pattern: 'no',
                                 callback: function(response, convo) {
                                     // stop the conversation. this will cause it to end with status == 'stopped'
                                     convo.stop();
                                 }
-                            },
-                            {
+                            }, {
                                 default: true,
                                 callback: function(response, convo) {
                                     convo.repeat();
@@ -82,7 +113,7 @@ controller.hears(['what is my name', 'who am i'], 'direct_message,direct_mention
                             controller.storage.users.get(message.user, function(err, user) {
                                 if (!user) {
                                     user = {
-                                        id: message.user,
+                                        id: message.user
                                     };
                                 }
                                 user.name = convo.extractResponse('nickname');
@@ -90,8 +121,6 @@ controller.hears(['what is my name', 'who am i'], 'direct_message,direct_mention
                                     bot.reply(message, 'Got it. I will call you ' + user.name + ' from now on.');
                                 });
                             });
-
-
 
                         } else {
                             // this happens if the conversation ended prematurely for some reason
@@ -104,9 +133,9 @@ controller.hears(['what is my name', 'who am i'], 'direct_message,direct_mention
     });
 });
 
-controller.hears('','direct_message,direct_mention,mention',function(bot,message) {
-  var msg = message.text;
-    cleverbot.ask(msg, function (err, response) {
+controller.hears('', 'direct_message,direct_mention,mention', function(bot, message) {
+    var msg = message.text;
+    cleverbot.ask(msg, function(err, response) {
         if (!err) {
             bot.reply(message, response);
         } else {
