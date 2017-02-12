@@ -5,6 +5,8 @@ require('dotenv').config()
 const Botkit = require('./lib/Botkit.js');
 const os = require('os');
 const axios = require('axios');
+const schedule = require('node-schedule');
+const jsonQuery = require('json-query');
 
 // personal DREIDEV data
 const dreidevCloseGroupUNames = ['tokyo', 'naderalexan', 'drazious', 'rawanhussein'];
@@ -133,6 +135,28 @@ controller.hears([
     });
 });
 
+// testing function
+controller.hears([
+    'testruru', 'testbot'
+], 'direct_message,direct_mention,mention', function(bot, message) {
+    axios.get('https://slack.com/api/channels.list', {
+        params: {
+            token: process.env.SALCKBOT_API_TOKEN
+        }
+    }).then(function(response) {
+        const channels = response.data.channels;
+        const testChannelId = jsonQuery('[name=test-dreidev]', {data: channels}).value.id;
+        console.log('channel id: ' + testChannelId);
+        bot.say({
+            text: 'You triggered the rorobot test command, like you need to DUH, I\'m working fine !!', channel: testChannelId // a valid slack channel, group, mpim, or im ID
+        });
+    }).catch(function(error) {
+        console.log(error);
+    });
+});
+
+// FALLBACK to cleverbot
+
 controller.hears('', 'direct_message,direct_mention,mention', function(bot, message) {
     var msg = message.text;
     cleverbot.ask(msg, function(err, response) {
@@ -143,3 +167,6 @@ controller.hears('', 'direct_message,direct_mention,mention', function(bot, mess
         }
     });
 })
+
+var j = schedule.scheduleJob('11 * * * *', function() {
+});
