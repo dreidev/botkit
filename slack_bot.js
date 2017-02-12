@@ -9,12 +9,15 @@ const schedule = require('node-schedule');
 const jsonQuery = require('json-query');
 
 // personal DREIDEV data
-const dreidevCloseGroupUNames = ['tokyo', 'naderalexan', 'drazious', 'rawanhussein'];
+const dreidevInnerCircleUNames = ['tokyo', 'naderalexan', 'drazious', 'rawanhussein'];
 
+// start bot logic
 var controller = Botkit.slackbot({debug: true});
 
+// bot instance
 var bot = controller.spawn({token: process.env.SALCKBOT_TOKEN}).startRTM();
 
+// cleverbot instance (for fallback)
 let cleverbot = new(require("cleverbot.io"))(process.env.CLEVERBOT_API_USER, process.env.CLEVERBOT_API_KEY);
 cleverbot.setNick("Dry");
 cleverbot.create(function(err, session) {
@@ -44,7 +47,7 @@ controller.hears([
 
 // pants function
 controller.hears([
-    'what the (.*)', 'what do I miss (.*)'
+    'what does nader miss (.*)', 'what do I miss (.*)'
 ], 'direct_message,direct_mention,mention', function(bot, message) {
     var name = message.match[1];
     controller.storage.users.get(message.user, function(err, user) {
@@ -60,7 +63,7 @@ controller.hears([
                 user: user.id
             }
         }).then(function(response) {
-            if (dreidevCloseGroupUNames.indexOf(response.data.user.name) > -1) {
+            if (dreidevInnerCircleUNames.indexOf(response.data.user.name) > -1) {
                 bot.reply(message, 'T h e pants !! ');
             }
         }).catch(function(error) {
@@ -155,7 +158,6 @@ controller.hears([
     });
 });
 
-
 // testing users function
 controller.hears([
     'testUsers', 'testFunc'
@@ -166,11 +168,12 @@ controller.hears([
         }
     }).then(function(response) {
         const members = response.data.members;
-        members.forEach(function(member){
+        members.forEach(function(member) {
             console.log(member);
-            if (!member.deleted && member.name==='tokyo') {
+            if (!member.deleted && member.name === 'tokyo') {
                 bot.say({
-                    text: 'Hi, ' + member.name + '\nWhat are you working on today?', channel: member.id // a valid slack channel, group, mpim, or im ID
+                    text: 'Hi, ' + member.name + '\nWhat are you working on today?',
+                    channel: member.id // a valid slack channel, group, mpim, or im ID
                 });
             }
         });
@@ -192,12 +195,11 @@ controller.hears('', 'direct_message,direct_mention,mention', function(bot, mess
     });
 })
 
-
 // Dreidev working days 10 am rule
 const workingDaysMoriningRule = new schedule.RecurrenceRule();
 workingDaysMoriningRule.dayOfWeek = [new schedule.Range(0, 4)];
 workingDaysMoriningRule.hour = 10;
-workingDaysMoriningRule.minute = 00;
+workingDaysMoriningRule.minute = 0;
 
 let scheduleMornigWorkCheckupQuestion = schedule.scheduleJob(workingDaysMoriningRule, function() {
     axios.get('https://slack.com/api/users.list', {
@@ -206,14 +208,58 @@ let scheduleMornigWorkCheckupQuestion = schedule.scheduleJob(workingDaysMorining
         }
     }).then(function(response) {
         const members = response.data.members;
-        members.forEach(function(member){
-            console.log(member);
-            if (!member.deleted && (member.name==='tokyo')) {
-                bot.say({
-                    text: 'Hi, ' + member.name + '\nWhat are you working on today?', channel: member.id // a valid slack channel, group, mpim, or im ID
+        members.forEach(function(member) {
+            if (member.name === 'tokyo') {
+                bot.startPrivateConversation({
+                    user: member.id
+                }, function(err, convo) {
+                    if (!err) {
+                        convo.say('Hello, ' + member.name);
+                        convo.ask('What are your working on today?', function(response, convo) {
+                            convo.ask('Awesome, anything else?', [
+                                {
+                                    pattern: 'yes',
+                                    callback: function(response, convo) {
+                                        convo.repeat();
+                                        convo.next();
+                                    }
+                                }, {
+                                    pattern: 'no',
+                                    callback: function(response, convo) {
+                                        // stop the conversation. this will cause it to end with status == 'stopped'
+                                        convo.next();
+                                    }
+                                }, {
+                                    default: true,
+                                    callback: function(response, convo) {
+                                        convo.repeat();
+                                        convo.next();
+                                    }
+                                }
+                            ]);
+
+                            convo.next();
+
+                        }, {'key': 'nickname'}); // store the results in a field called nickname
+
+                        convo.on('end', function(convo) {
+                            if (convo.status == 'completed') {
+                                // this happens if the conversation ended normally
+                                bot.say({
+                                    text: 'Okay, great. Good luck ' + member.name,
+                                    channel: member.id
+                                });
+                            } else {
+                                // this happens if the conversation ended prematurely for some reason
+                                bot.say({text: 'OK, nevermind!', channel: member.id});
+                            }
+                        });
+                    }
                 });
+
             }
         });
+        // end members forEach
     }).catch(function(error) {
         console.log(error);
     });
