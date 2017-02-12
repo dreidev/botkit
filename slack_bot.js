@@ -192,5 +192,29 @@ controller.hears('', 'direct_message,direct_mention,mention', function(bot, mess
     });
 })
 
-var j = schedule.scheduleJob('11 * * * *', function() {
+
+// Dreidev working days 10 am rule
+const workingDaysMoriningRule = new schedule.RecurrenceRule();
+workingDaysMoriningRule.dayOfWeek = [new schedule.Range(0, 4)];
+workingDaysMoriningRule.hour = 10;
+workingDaysMoriningRule.minute = 00;
+
+let scheduleMornigWorkCheckupQuestion = schedule.scheduleJob(workingDaysMoriningRule, function() {
+    axios.get('https://slack.com/api/users.list', {
+        params: {
+            token: process.env.SALCKBOT_API_TOKEN
+        }
+    }).then(function(response) {
+        const members = response.data.members;
+        members.forEach(function(member){
+            console.log(member);
+            if (!member.deleted && (member.name==='tokyo')) {
+                bot.say({
+                    text: 'Hi, ' + member.name + '\nWhat are you working on today?', channel: member.id // a valid slack channel, group, mpim, or im ID
+                });
+            }
+        });
+    }).catch(function(error) {
+        console.log(error);
+    });
 });
