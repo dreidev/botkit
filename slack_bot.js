@@ -155,6 +155,30 @@ controller.hears([
     });
 });
 
+
+// testing users function
+controller.hears([
+    'testUsers', 'testFunc'
+], 'direct_message,direct_mention,mention', function(bot, message) {
+    axios.get('https://slack.com/api/users.list', {
+        params: {
+            token: process.env.SALCKBOT_API_TOKEN
+        }
+    }).then(function(response) {
+        const members = response.data.members;
+        members.forEach(function(member){
+            console.log(member);
+            if (!member.deleted && member.name==='tokyo') {
+                bot.say({
+                    text: 'Hi, ' + member.name + '\nWhat are you working on today?', channel: member.id // a valid slack channel, group, mpim, or im ID
+                });
+            }
+        });
+    }).catch(function(error) {
+        console.log(error);
+    });
+});
+
 // FALLBACK to cleverbot
 
 controller.hears('', 'direct_message,direct_mention,mention', function(bot, message) {
