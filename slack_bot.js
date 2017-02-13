@@ -57,12 +57,7 @@ controller.hears([
             };
         }
         user.name = name;
-        axios.get('https://slack.com/api/users.info', {
-            params: {
-                token: process.env.SALCKBOT_API_TOKEN,
-                user: user.id
-            }
-        }).then(function(response) {
+        getMemberInfo(user.id).then(function(response) {
             if (dreidevInnerCircleUNames.indexOf(response.data.user.name) > -1) {
                 bot.reply(message, 'T h e pants !! ');
             }
@@ -140,13 +135,9 @@ controller.hears([
 
 // testing function
 controller.hears([
-    'testruru', 'testbot'
+    'testruru', 'testrurubot'
 ], 'direct_message,direct_mention,mention', function(bot, message) {
-    axios.get('https://slack.com/api/channels.list', {
-        params: {
-            token: process.env.SALCKBOT_API_TOKEN
-        }
-    }).then(function(response) {
+    getChannelsList().then(function(response) {
         const channels = response.data.channels;
         const testChannelId = jsonQuery('[name=test-dreidev]', {data: channels}).value.id;
         console.log('channel id: ' + testChannelId);
@@ -162,14 +153,9 @@ controller.hears([
 controller.hears([
     'testUsers', 'testFunc'
 ], 'direct_message,direct_mention,mention', function(bot, message) {
-    axios.get('https://slack.com/api/users.list', {
-        params: {
-            token: process.env.SALCKBOT_API_TOKEN
-        }
-    }).then(function(response) {
+    getMembersList().then(function(response) {
         const members = response.data.members;
         members.forEach(function(member) {
-            console.log(member);
             if (!member.deleted && member.name === 'tokyo') {
                 bot.say({
                     text: 'Hi, ' + member.name + '\nWhat are you working on today?',
@@ -185,8 +171,8 @@ controller.hears([
 // FALLBACK to cleverbot
 
 controller.hears('', 'direct_message,direct_mention,mention', function(bot, message) {
-    var msg = message.text;
-    cleverbot.ask(msg, function(err, response) {
+    // var msg = message.text;
+    cleverbot.ask(message.text, function(err, response) {
         if (!err) {
             bot.reply(message, response);
         } else {
@@ -202,16 +188,11 @@ workingDaysMoriningRule.hour = 11;
 workingDaysMoriningRule.minute = 58;
 
 let scheduleMornigWorkCheckupQuestion = schedule.scheduleJob(workingDaysMoriningRule, function() {
-    axios.get('https://slack.com/api/users.list', {
-        params: {
-            token: process.env.SALCKBOT_API_TOKEN
-        }
-    }).then(function(response) {
+    getMembersList().then(function(response) {
         const members = response.data.members;
         members.forEach(function(member) {
             workingDaysMoriningPrivConvo(member);
         });
-        // end members forEach
     }).catch(function(error) {
         console.log(error);
     });
@@ -273,4 +254,31 @@ function workingDaysMoriningPrivConvo (member) {
         });
 
     }
+};
+
+// API
+
+function getMembersList(){
+    return axios.get('https://slack.com/api/users.list', {
+        params: {
+            token: process.env.SALCKBOT_API_TOKEN
+        }
+    });
+};
+
+function getMemberInfo(userID){
+    return axios.get('https://slack.com/api/users.info', {
+        params: {
+            token: process.env.SALCKBOT_API_TOKEN,
+            user: userID
+        }
+    });
+};
+
+function getChannelsList(){
+    return axios.get('https://slack.com/api/channels.list', {
+        params: {
+            token: process.env.SALCKBOT_API_TOKEN
+        }
+    });
 };
